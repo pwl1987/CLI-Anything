@@ -5,11 +5,14 @@
 CLI-Anything：连接 AI Agent 与全世界软件的桥梁</strong><br>
 </p>
 
+**🌐 [CLI-Hub](https://hkuds.github.io/CLI-Anything/)**：在 **[CLI-Hub](https://hkuds.github.io/CLI-Anything/)** 探索社区已构建的所有 CLI，一条命令即可安装。想贡献你的 CLI？[提交 PR](https://github.com/HKUDS/CLI-Anything/blob/main/CONTRIBUTING.md) — Hub 会即时更新。
+
 <p align="center">
   <a href="#-快速上手"><img src="https://img.shields.io/badge/快速上手-5_分钟-blue?style=for-the-badge" alt="Quick Start"></a>
-  <a href="#-实测展示"><img src="https://img.shields.io/badge/Demo-11_款软件-green?style=for-the-badge" alt="Demos"></a>
-  <a href="#-测试结果"><img src="https://img.shields.io/badge/测试-1%2C508_通过-brightgreen?style=for-the-badge" alt="Tests"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"></a>
+  <a href="#-实测展示"><img src="https://img.shields.io/badge/Demo-13_款软件-green?style=for-the-badge" alt="Demos"></a>
+  <a href="#-测试结果"><img src="https://img.shields.io/badge/测试-1%2C741_通过-brightgreen?style=for-the-badge" alt="Tests"></a>
+  <a href="https://arxiv.org/abs/2606.03854"><img src="https://img.shields.io/badge/Tech_Report-arXiv%3A2606.03854-b31b1b?style=for-the-badge" alt="Tech Report"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-yellow?style=for-the-badge" alt="License"></a>
 </p>
 
 <p align="center">
@@ -56,7 +59,7 @@ CLI 是人类和 AI Agent 共通的万能接口：
 
 - **Python 3.10+**
 - 目标软件已安装（如 GIMP、Blender、LibreOffice 或你自己的应用）
-- 支持的 AI 编程工具之一：[Claude Code](#-claude-code) | [OpenClaw](#-openclaw) | [OpenCode](#-opencode) | [Codex](#-codex) | [Qodercli](#-qodercli) | [更多平台](#-更多平台即将支持)
+- 支持的 AI 编程工具之一：[Claude Code](#-claude-code) | [Cursor](#-cursor) | [OpenClaw](#-openclaw) | [OpenCode](#-opencode) | [Codex](#-codex) | [Qodercli](#-qodercli) | [GitHub Copilot CLI](#-github-copilot-cli) | [更多平台](#-更多平台即将支持)
 
 ### 选择你的平台
 
@@ -87,12 +90,28 @@ CLI-Anything 以 Claude Code 插件市场的形式托管在 GitHub 上。
 **第三步：一行命令生成 CLI**
 
 ```bash
-# /cli-anything:cli-anything <软件路径或仓库地址>
+# /cli-anything <软件路径或仓库地址>
 # 为 GIMP 生成完整的 CLI（7 个阶段全自动）
-/cli-anything:cli-anything ./gimp
+/cli-anything ./gimp
 
-# 注意：如果你的 Claude Code 版本低于 2.x，请使用 "/cli-anything"。
+# 兼容写法（旧版本 Claude Code 可重试）
+# /cli-anything:cli-anything ./gimp
 ```
+
+Claude Code 不同版本的命令兼容说明：
+- 优先使用 `/cli-anything` 作为主入口。
+- 在已**确认插件已安装并加载**的情况下，若旧版本的 Claude Code 不识别 `/cli-anything`，可尝试兼容写法 `/cli-anything:cli-anything`。
+- 其他辅助命令保持 `:子命令` 形式（例如 `/cli-anything:refine`）。
+
+如果出现 `Unknown skill: cli-anything`，两种写法都引用同一个 skill 名称，切换写法无法解决，请优先排查插件是否已安装/加载：
+1. 重新加载插件命令：`/reload-plugins`
+2. 验证插件是否已加载：`/help cli-anything`（能看到 CLI-Anything 帮助即表示已加载）
+3. 如仍未识别，重新从市场安装：
+   - `/plugin marketplace add HKUDS/CLI-Anything`
+   - `/plugin install cli-anything`
+4. 确认插件可用后，再重试入口命令：
+   - 推荐：`/cli-anything ./gimp`
+   - 仅旧版本：`/cli-anything:cli-anything ./gimp`
 
 完整流水线自动执行：
 1. 🔍 **分析** — 扫描源码，将 GUI 操作映射到 API
@@ -238,6 +257,62 @@ cp CLI-Anything/openclaw-skill/SKILL.md ~/.openclaw/skills/cli-anything/SKILL.md
 
 <details>
 
+<summary><h4 id="-cursor">⚡ Cursor</h4></summary>
+
+Cursor 同时提供两条能力：
+
+| 轨道 | 用途 | 安装方式 |
+|------|------|----------|
+| **生成器** | 用 `/cli-anything` 等斜杠命令构建新 harness | `cursor-plugin/` Cursor 插件 |
+| **消费端** | 从 CLI-Hub 查找/安装/使用已发布 CLI | `npx skills` + `cli-hub`（不变） |
+
+**生成器 — 安装 Cursor 插件**
+
+```bash
+git clone https://github.com/HKUDS/CLI-Anything.git
+bash CLI-Anything/cursor-plugin/scripts/install.sh
+```
+
+Windows PowerShell：
+
+```powershell
+.\CLI-Anything\cursor-plugin\scripts\install.ps1
+```
+
+升级使用 `--force` / `-Force`。默认安装路径为
+`~/.cursor/plugins/local/cli-anything`（`CURSOR_PLUGINS_HOME` 必须指向名为 `plugins` 的目录）。
+安装器会把 `cli-anything-plugin/` 中的方法论资源 vendor 进插件，并写入 `PLUGIN_ROOT.txt`
+与 `~/.cursor/cli-anything-generator.root`，以便 Cursor Agent 用绝对路径读取 HARNESS。
+
+在 Cursor 中执行 **Developer: Reload Window**，然后：
+
+```text
+/cli-anything ./gimp
+/cli-anything-refine ./shotcut "picture-in-picture workflows"
+/cli-anything-test ./libreoffice
+/cli-anything-validate ./libreoffice
+/cli-anything-list
+```
+
+**消费端 — Hub / skills（与生成器插件分离）**
+
+```bash
+npx skills add HKUDS/CLI-Anything --skill cli-hub-meta-skill -g -y
+# 或某个单应用 skill，例如 cli-anything-blender
+pip install cli-anything-hub
+```
+
+本地验证安装器：
+
+```bash
+bash CLI-Anything/cursor-plugin/tests/test_install.sh
+```
+
+更多说明见 [`cursor-plugin/README.md`](cursor-plugin/README.md)。
+</details>
+
+<details>
+
 <summary><h4 id="-codex">⚡ Codex <sup><code>实验性</code></sup> <sup><code>社区贡献</code></sup></h4></summary>
 
 **第一步：安装 Skill**
@@ -259,6 +334,7 @@ bash CLI-Anything/codex-skill/scripts/install.sh
 ```
 
 脚本会把 skill 安装到 `$CODEX_HOME/skills/cli-anything`；如果没有设置 `CODEX_HOME`，则默认安装到 `~/.codex/skills/cli-anything`。
+安装器还会把权威版本的 `HARNESS.md`、命令规范、按需指南、可复用辅助脚本、skill 模板和 preview 协议复制到已安装 skill 的 `references/` 和 `scripts/` 目录。这样 Codex skill 可以独立工作，同时仍以 `cli-anything-plugin/` 作为唯一权威来源。
 
 安装后重启 Codex，让它重新发现这个 skill。
 
@@ -270,10 +346,41 @@ bash CLI-Anything/codex-skill/scripts/install.sh
 Use CLI-Anything to build a harness for ./gimp
 Use CLI-Anything to refine ./shotcut for picture-in-picture workflows
 Use CLI-Anything to validate ./libreoffice
+Use CLI-Anything to list generated harnesses under the current directory
 ```
 
 这个 Codex skill 复用了 Claude Code 插件和 OpenCode 命令所使用的同一套方法论，
 不会改变生成出来的 Python harness 结构。
+
+可以运行下面的命令，验证 Codex 安装包是否完整：
+
+```bash
+bash CLI-Anything/codex-skill/tests/test_install.sh
+```
+
+</details>
+
+<details>
+
+<summary><h4 id="-github-copilot-cli">⚡ GitHub Copilot CLI <sup><code>社区贡献</code></sup></h4></summary>
+
+**第一步：安装插件**
+
+```bash
+git clone https://github.com/HKUDS/CLI-Anything.git
+cd CLI-Anything
+copilot plugin install ./cli-anything-plugin
+```
+
+这将 CLI-Anything 插件安装到 GitHub Copilot CLI 中。插件应该已经在你的 GitHub Copilot CLI 会话中可用了。
+
+**第二步：在 GitHub Copilot CLI 中使用 CLI-Anything**
+
+```bash
+/cli-anything:cli-anything ./gimp
+/cli-anything:refine ./gimp "批处理和滤镜"
+/cli-anything:validate ./gimp
+```
 
 </details>
 
@@ -282,8 +389,8 @@ Use CLI-Anything to validate ./libreoffice
 
 CLI-Anything 的设计是平台无关的，计划支持更多 AI 编程工具：
 
+- **Cursor** — 已通过 `cursor-plugin/` 提供生成器插件，消费端继续用 Hub/skills
 - **Codex** — 已通过 `codex-skill/` 提供接入
-- **Cursor** — 即将支持
 - **Windsurf** — 即将支持
 - **你喜欢的工具** — 欢迎贡献！参考 `opencode-commands/` 目录的实现。
 
@@ -326,7 +433,7 @@ cli-anything-gimp
 | **🤖 AI/ML 平台** | 用结构化命令驱动模型训练、推理流水线和超参搜索 | Stable Diffusion WebUI、ComfyUI、InvokeAI、Text-generation-webui、Open WebUI、Fooocus、Kohya_ss、AnythingLLM、SillyTavern |
 | **📊 数据与分析** | 以编程方式完成数据处理、可视化和统计分析工作流 | JupyterLab、Apache Superset、Metabase、Redash、DBeaver、KNIME、Orange、OpenSearch Dashboards、Lightdash |
 | **💻 开发工具** | 通过 CLI 串联代码编辑、构建、测试与部署流程 | Jenkins、Gitea、Hoppscotch、Portainer、pgAdmin、SonarQube、ArgoCD、OpenLens、Insomnia、Beekeeper Studio |
-| **🎨 创意与媒体** | 以编程方式控制内容创作、编辑和渲染工作流 | Blender、GIMP、OBS Studio、Audacity、Krita、Kdenlive、Shotcut、Inkscape、Darktable、LMMS、Ardour |
+| **🎨 创意与媒体** | 以编程方式控制内容创作、编辑和渲染工作流 | Blender、GIMP、OBS Studio、Audacity、WaveTone、Krita、Kdenlive、Shotcut、Inkscape、Darktable、LMMS、Ardour |
 | **📐 图表与可视化** | 以编程方式创建和操作流程图、架构图、ER 图等各类图表 | Draw.io (diagrams.net)、Mermaid、PlantUML、Excalidraw、yEd |
 | **🔬 科学计算** | 自动化科研工作流、仿真模拟和复杂计算 | ImageJ、FreeCAD、QGIS、ParaView、Gephi、LibreCAD、Stellarium、KiCad、JASP、Jamovi |
 | **🏢 企业与办公** | 将商业应用和生产力工具转化为 Agent 可访问的系统 | NextCloud、GitLab、Grafana、Mattermost、LibreOffice、AppFlowy、NocoDB、Odoo (Community)、Plane、ERPNext |
@@ -348,7 +455,7 @@ AI Agent 推理能力很强，但操控真实专业软件的能力很弱。现�
 | 💸 "GUI 自动化三天两头崩" | 告别截图、点击和 RPA 的脆弱性，纯命令行操控，结构化接口 |
 | 📊 "Agent 需要结构化数据" | 内置 JSON 输出供 Agent 直接消费，同时保留可读格式方便调试 |
 | 🔧 "定制集成太贵了" | 一个插件就能为任意代码库自动生成 CLI，经过验证的 7 阶段流水线 |
-| ⚡ "原型和生产之间差十万八千里" | 1,508+ 测试用例，全部在真实软件上验证通过，覆盖 11 款主流应用 |
+| ⚡ "原型和生产之间差十万八千里" | 1,774+ 测试用例，全部在真实软件上验证通过，覆盖 13 款主流应用 |
 
 ---
 
@@ -445,7 +552,7 @@ CLI-Anything 适用于任何有代码库的软件 —— 不限领域，不限�
 
 ### 🏭 专业级测试
 
-在 11 款复杂应用上进行了实测，涵盖创意、生产力、通信、图表和 AI 内容生成领域 —— 这些软件此前对 AI Agent 来说几乎不可触及。
+在 13 款复杂应用上进行了实测，涵盖创意、生产力、通信、图表、原生调试、GPU 分析和 AI 内容生成领域 —— 这些软件此前对 AI Agent 来说几乎不可触及。
 
 ### 🎨 覆盖多元领域
 
@@ -492,11 +599,25 @@ CLI-Anything 适用于任何有代码库的软件 —— 不限领域，不限�
 <td align="center">✅ 161</td>
 </tr>
 <tr>
+<td align="center"><strong>WaveTone</strong></td>
+<td>音频扒谱辅助</td>
+<td><code>cli-anything-wavetone</code></td>
+<td>JSON manifest + real WaveTone launch</td>
+<td align="center"><a href="wavetone/agent-harness/">新增</a></td>
+</tr>
+<tr>
 <td align="center"><strong>📄 LibreOffice</strong></td>
 <td>办公套件（Writer、Calc、Impress）</td>
 <td><code>cli-anything-libreoffice</code></td>
 <td>ODF generation + headless LO</td>
 <td align="center">✅ 158</td>
+</tr>
+<tr>
+<td align="center"><strong>📚 <a href="zotero/agent-harness/">Zotero</a></strong></td>
+<td>文献管理与引用</td>
+<td><code>cli-anything-zotero</code></td>
+<td>Local SQLite + connector + Local API</td>
+<td align="center">✅ <a href="zotero/agent-harness/">新增</a></td>
 </tr>
 <tr>
 <td align="center"><strong>📹 OBS Studio</strong></td>
@@ -520,6 +641,13 @@ CLI-Anything 适用于任何有代码库的软件 —— 不限领域，不限�
 <td align="center">✅ 154</td>
 </tr>
 <tr>
+<td align="center"><strong>🎬 <a href="openscreen/agent-harness/">Openscreen</a></strong></td>
+<td>屏幕录像编辑器</td>
+<td><code>cli-anything-openscreen</code></td>
+<td>ffmpeg backend</td>
+<td align="center">✅ 101</td>
+</tr>
+<tr>
 <td align="center"><strong>📞 Zoom</strong></td>
 <td>视频会议</td>
 <td><code>cli-anything-zoom</code></td>
@@ -541,12 +669,61 @@ CLI-Anything 适用于任何有代码库的软件 —— 不限领域，不限�
 <td align="center">✅ 50</td>
 </tr>
 <tr>
+<td align="center"><strong>🐞 <a href="lldb/agent-harness/">LLDB</a></strong></td>
+<td>原生调试</td>
+<td><code>cli-anything-lldb</code></td>
+<td>LLDB Python API</td>
+<td align="center">✅ 27</td>
+</tr>
+<tr>
+<td align="center"><strong>🟩 <a href="nsight-graphics/agent-harness/">Nsight Graphics CLI</a></strong></td>
+<td>GPU 调试与分析</td>
+<td><code>cli-anything-nsight-graphics</code></td>
+<td>官方 ngfx / ngfx-capture 编排 + GPU Trace 摘要 + replay 分析</td>
+<td align="center">✅ 51</td>
+</tr>
+<tr>
+<td align="center"><strong>📈 <a href="unrealinsights/agent-harness/">Unreal Insights</a></strong></td>
+<td>性能分析</td>
+<td><code>cli-anything-unrealinsights</code></td>
+<td>后台 trace 会话 + 匹配版 UnrealInsights 构建 + 无头导出</td>
+<td align="center">✅ 50</td>
+</tr>
+<tr>
+<td align="center"><strong>📦 <a href="sbox/agent-harness/">s&amp;box</a></strong></td>
+<td>游戏开发</td>
+<td><code>cli-anything-sbox</code></td>
+<td>Source 2 游戏引擎 - 直接读写 .scene/.prefab/.vmat/.vsnd JSON</td>
+<td align="center">✅ 244</td>
+</tr>
+<tr>
+<td align="center"><strong>🎨 Sketch</strong></td>
+<td>UI 设计</td>
+<td><code>sketch-cli</code></td>
+<td>sketch-constructor (Node.js)</td>
+<td align="center">✅ 19</td>
+</tr>
+<tr>
+<td align="center"><strong>🔩 <a href="3MF/agent-harness/">3MF</a></strong></td>
+<td>3D 打印网格编辑器</td>
+<td><code>cli-anything-3mf</code></td>
+<td>numpy, scipy, trimesh</td>
+<td align="center">✅ 50+</td>
+</tr>
+<tr>
+<td align="center"><strong>📓 <a href="joplin/agent-harness/">Joplin</a></strong></td>
+<td>笔记与待办</td>
+<td><code>cli-anything-joplin</code></td>
+<td>Joplin 终端 CLI 子进程</td>
+<td align="center">✅ 134</td>
+</tr>
+<tr>
 <td align="center" colspan="4"><strong>合计</strong></td>
-<td align="center"><strong>✅ 1,508</strong></td>
+<td align="center"><strong>✅ 1,955</strong></td>
 </tr>
 </table>
 
-> 全部 1,508 项测试 **100% 通过** —— 1,073 项单元测试 + 435 项端到端测试。
+> 全部 1,955 项测试 **100% 通过** - 1,318 项单元测试 + 487 项端到端测试 + 19 项 Node.js 测试。
 
 ---
 
@@ -567,15 +744,23 @@ gimp          107 passed  ✅   (64 unit + 43 e2e)
 blender       208 passed  ✅   (150 unit + 58 e2e)
 inkscape      202 passed  ✅   (148 unit + 54 e2e)
 audacity      161 passed  ✅   (107 unit + 54 e2e)
+wavetone       30 passed  ✅   (24 unit + 6 default e2e，2 backend-gated e2e skipped；32 passed opt-in)
 libreoffice   158 passed  ✅   (89 unit + 69 e2e)
 obs-studio    153 passed  ✅   (116 unit + 37 e2e)
 kdenlive      155 passed  ✅   (111 unit + 44 e2e)
 shotcut       154 passed  ✅   (110 unit + 44 e2e)
+openscreen    101 passed  ✅   (78 unit + 23 e2e)
 zoom           22 passed  ✅   (22 unit + 0 e2e)
 drawio        138 passed  ✅   (116 unit + 22 e2e)
 anygen         50 passed  ✅   (40 unit + 10 e2e)
+lldb           27 passed  ✅   (23 unit + 4 e2e)
+nsight-graphics 51 passed ✅   (46 unit/CLI + 5 local e2e)
+unrealinsights 50 passed  ✅   (49 unit + 1 e2e, 9 backend-gated e2e skipped)
+sketch         19 passed  ✅   (19 jest, Node.js)
+3mf            50 passed  ✅   (50 unit)
+joplin        134 passed  ✅   (107 unit + 27 e2e, 1 skipped on Windows)
 ──────────────────────────────────────────────────────────────────────────────
-TOTAL        1,508 passed  ✅   100% pass rate
+TOTAL        1,955 passed  ✅   100% pass rate
 ```
 
 ---
@@ -628,18 +813,38 @@ cli-anything/
 │   ├── cli-anything-validate.md         # 标准验证
 │   └── cli-anything-list.md             # 列出所有 CLI 工具
 │
-├── 🤖 codex-skill/                      # Codex skill 接入层
+├── 🖱️ cursor-plugin/                     # Cursor Desktop 生成器插件
+│   ├── .cursor-plugin/plugin.json        # Cursor 插件清单
+│   ├── commands/                         # /cli-anything 斜杠命令
+│   ├── skills/                           # 辅助生成器 skill
+│   ├── rules/                            # 阶段门禁规则
+│   ├── scripts/                          # 安装脚本与 vendor 辅助文件
+│   └── tests/                            # 安装器回归测试
+├── 🤖 codex-skill/                      # 可独立安装的 Codex skill
+│   ├── SKILL.md                         # Codex 工作流入口
+│   ├── agents/                          # Codex 界面元数据
+│   ├── scripts/                         # Bash 和 PowerShell 安装器
+│   └── tests/                           # 安装资源同步回归测试
 ├── 🎨 gimp/agent-harness/               # GIMP CLI（107 项测试）
 ├── 🧊 blender/agent-harness/            # Blender CLI（208 项测试）
 ├── ✏️ inkscape/agent-harness/            # Inkscape CLI（202 项测试）
 ├── 🎵 audacity/agent-harness/           # Audacity CLI（161 项测试）
+├── wavetone/agent-harness/              # WaveTone CLI（32 项测试：30 default + 2 backend-gated e2e）
 ├── 📄 libreoffice/agent-harness/        # LibreOffice CLI（158 项测试）
+├── 📚 zotero/agent-harness/             # Zotero CLI（新增，支持文献导入）
+├── 📓 joplin/agent-harness/             # Joplin CLI（134 测试：107 单元 + 27 e2e）
 ├── 📹 obs-studio/agent-harness/         # OBS Studio CLI（153 项测试）
 ├── 🎞️ kdenlive/agent-harness/           # Kdenlive CLI（155 项测试）
 ├── 🎬 shotcut/agent-harness/            # Shotcut CLI（154 项测试）
+├── 🎬 openscreen/agent-harness/         # Openscreen CLI — 屏幕录像编辑器（101 项测试）
 ├── 📞 zoom/agent-harness/               # Zoom CLI（22 项测试）
 ├── 📐 drawio/agent-harness/             # Draw.io CLI（138 项测试）
-└── ✨ anygen/agent-harness/             # AnyGen CLI（50 项测试）
+├── ✨ anygen/agent-harness/             # AnyGen CLI（50 项测试）
+├── 🟩 nsight-graphics/agent-harness/    # Nsight Graphics CLI（51 项测试）
+├── 🐞 lldb/agent-harness/               # LLDB CLI（27 项测试）
+├── 📈 unrealinsights/agent-harness/     # Unreal Insights CLI（50 项测试）
+├── 📦 sbox/agent-harness/               # s&box CLI（244 项测试: 157 单元 + 17 orchestrator + 50 e2e + 20 exit-code）
+└── 🎨 sketch/agent-harness/             # Sketch CLI（19 项测试，Node.js）
 ```
 
 每个 `agent-harness/` 包含一个可安装的 Python 包，位于 `cli_anything.<软件名>/` 下，包含 Click CLI、核心模块、工具类（含 `repl_skin.py` 和后端适配器）以及完整的测试。
@@ -741,7 +946,7 @@ HARNESS.md 是我们通过自动化 CLI 生成，使任意软件具备 Agent 可
 
 它记录了在自动化生成过程中经验证并沉淀出的模式与方法论。
 
-这本手册提炼了成功构建全部 11 套生产级 CLI 的关键经验。
+这本手册提炼了成功构建全部 13 套生产级 CLI 的关键经验。
 
 ### 核心经验
 
@@ -865,9 +1070,27 @@ CLI_ANYTHING_FORCE_INSTALLED=1 python3 -m pytest cli_anything/<软件名>/tests/
 
 ---
 
+## 📚 引用
+
+如果 CLI-Anything 对你有帮助，请引用我们的技术报告：
+
+```bibtex
+@misc{yang2026clianythingagentnativecomputeruse,
+      title={CLI-Anything: Towards Agent-Native Computer Use}, 
+      author={Yuhao Yang and Tianyu Fan and Chao Huang},
+      year={2026},
+      eprint={2606.03854},
+      archivePrefix={arXiv},
+      primaryClass={cs.HC},
+      url={https://arxiv.org/abs/2606.03854}, 
+}
+```
+
+---
+
 ## 📄 License
 
-MIT License — 可自由使用、修改和分发。
+Apache License 2.0 — 可自由使用、修改和分发。
 
 ---
 
@@ -875,7 +1098,7 @@ MIT License — 可自由使用、修改和分发。
 
 **CLI-Anything** — *一行命令，让任何软件成为 Agent 的原生工具。*
 
-<sub>为 AI Agent 时代而生 | 11 款专业软件实测 | 1,508 项测试全部通过</sub>
+<sub>为 AI Agent 时代而生 | 13 款专业软件实测 | 1,774 项测试全部通过</sub>
 
 <br>
 

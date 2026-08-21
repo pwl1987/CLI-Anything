@@ -27,6 +27,7 @@ Usage:
 import sys
 import os
 import json
+import shlex
 import click
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -55,6 +56,17 @@ def output(data, message: str = ""):
             _print_list(data)
         else:
             click.echo(str(data))
+
+
+def echo_human(message: str, err: bool = False):
+    """Print a human-facing message. No-op in JSON mode.
+
+    Keeps `--json` output a single parseable document — anything written for
+    humans must go through here so it never lands beside the JSON payload.
+    """
+    if _json_output:
+        return
+    click.echo(message, err=err)
 
 
 def _print_dict(d: dict, indent: int = 0):
@@ -152,9 +164,9 @@ def workflow_validate(path):
     result = workflow_mod.validate_workflow(wf)
     output(result, f"Validation: {path}")
     if result["valid"]:
-        click.echo("  Workflow is valid.")
+        echo_human("  Workflow is valid.")
     else:
-        click.echo(f"  {len(result['errors'])} error(s) found.", err=True)
+        echo_human(f"  {len(result['errors'])} error(s) found.", err=True)
 
 
 # ── Queue Commands ──────────────────────────────────────────────
@@ -190,7 +202,8 @@ def queue_status():
 def queue_clear(confirm):
     """Clear all pending items from the queue."""
     if not confirm:
-        click.confirm("Clear the queue?", abort=True)
+        # In JSON mode the prompt goes to stderr so stdout stays parseable.
+        click.confirm("Clear the queue?", abort=True, err=_json_output)
     result = queue_mod.clear_queue(_base_url)
     output(result, "Queue cleared.")
 
@@ -385,7 +398,10 @@ def repl():
                     click.echo(f"  {cmd:<12} {subs}")
                 continue
 
-            args = line.split()
+            try:
+                args = shlex.split(line)
+            except ValueError:
+                args = line.split()
             try:
                 cli.main(args, standalone_mode=False)
             except SystemExit:

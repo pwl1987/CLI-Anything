@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import pytest
+from click.testing import CliRunner
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -15,7 +16,7 @@ from cli_anything.inkscape.utils.svg_utils import (
     parse_style, serialize_style, validate_color, generate_id,
     reset_id_counter, create_svg_element, serialize_svg,
     find_defs, find_element_by_id, remove_element_by_id,
-    SVG_NS, INKSCAPE_NS,
+    SVG_NS, INKSCAPE_NS, SODIPODI_NS,
 )
 from cli_anything.inkscape.core.document import (
     create_document, open_document, save_document, get_document_info,
@@ -28,7 +29,7 @@ from cli_anything.inkscape.core.shapes import (
     list_objects, get_object, SHAPE_TYPES,
 )
 from cli_anything.inkscape.core.text import (
-    add_text, set_text_property, list_text_objects, TEXT_PROPERTIES,
+    add_text, set_text_property, list_text_objects, layout_text_lines, TEXT_PROPERTIES,
 )
 from cli_anything.inkscape.core.styles import (
     set_fill, set_stroke, set_opacity, set_style,
@@ -53,6 +54,7 @@ from cli_anything.inkscape.core.gradients import (
 )
 from cli_anything.inkscape.core.export import EXPORT_PRESETS, list_presets
 from cli_anything.inkscape.core.session import Session
+from cli_anything.inkscape import inkscape_cli
 
 
 @pytest.fixture(autouse=True)
@@ -237,6 +239,47 @@ class TestDocument:
         assert svg.tag == f"{{{SVG_NS}}}svg"
         assert "800" in svg.get("width", "")
 
+    def test_project_to_svg_wrapped_text_uses_tspans(self):
+        proj = create_document(name="svg_text_wrap", width=800, height=600)
+        add_text(
+            proj,
+            text="Real capture plus Veo cold open plus Gemini score",
+            x=20,
+            y=40,
+            box_width=140,
+            font_size=20,
+        )
+        svg = project_to_svg(proj)
+        text_nodes = list(svg.iter(f"{{{SVG_NS}}}text"))
+        assert len(text_nodes) == 1
+        tspans = list(text_nodes[0].iter(f"{{{SVG_NS}}}tspan"))
+        assert len(tspans) > 1
+
+    def test_project_to_svg_star_uses_standard_path_only(self):
+        proj = create_document(name="svg_star", background="none")
+        add_star(proj, cx=100, cy=100, points_count=5, outer_r=50, inner_r=25)
+
+        svg = project_to_svg(proj)
+        star_paths = list(svg.iter(f"{{{SVG_NS}}}path"))
+
+        assert len(star_paths) == 1
+        assert star_paths[0].get("d")
+        assert f"{{{SODIPODI_NS}}}type" not in star_paths[0].attrib
+
+
+class TestCliBootstrap:
+    def test_nonexistent_project_path_bootstraps_new_document(self, tmp_path):
+        project_path = tmp_path / "fresh.inkscape-cli.json"
+        inkscape_cli._session = None
+        runner = CliRunner()
+        result = runner.invoke(
+            inkscape_cli.cli,
+            ["--project", str(project_path), "document", "save"],
+        )
+        assert result.exit_code == 0, result.output
+        loaded = open_document(str(project_path))
+        assert loaded["name"] == "fresh"
+
 
 # ── Shape Tests ─────────────────────────────────────────────────
 
@@ -406,6 +449,12 @@ class TestText:
         assert obj["text"] == "Hello World"
         assert obj["x"] == 100
 
+    def test_add_text_with_box(self):
+        proj = self._make_doc()
+        obj = add_text(proj, text="Wrapped text", x=10, y=20, box_width=200, box_height=80)
+        assert obj["box_width"] == 200
+        assert obj["box_height"] == 80
+
     def test_add_text_empty(self):
         proj = self._make_doc()
         with pytest.raises(ValueError, match="cannot be empty"):
@@ -433,6 +482,12 @@ class TestText:
         add_text(proj, text="Hi")
         set_text_property(proj, 0, "font-size", "48")
         assert proj["objects"][0]["font_size"] == 48.0
+
+    def test_set_box_width(self):
+        proj = self._make_doc()
+        add_text(proj, text="Hi")
+        set_text_property(proj, 0, "box-width", "220")
+        assert proj["objects"][0]["box_width"] == 220.0
 
     def test_set_invalid_font_weight(self):
         proj = self._make_doc()
@@ -467,6 +522,18 @@ class TestText:
         style = proj["objects"][0]["style"]
         assert "48" in style and "px" in style
         assert "#ff0000" in style
+
+    def test_layout_text_lines_wraps(self):
+        proj = self._make_doc()
+        obj = add_text(
+            proj,
+            text="Real capture plus Veo cold open plus Gemini score",
+            box_width=120,
+            box_height=90,
+            font_size=20,
+        )
+        lines = layout_text_lines(obj)
+        assert len(lines) > 1
 
 
 # ── Style Tests ─────────────────────────────────────────────────

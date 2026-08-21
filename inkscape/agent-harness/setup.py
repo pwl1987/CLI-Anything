@@ -13,7 +13,7 @@ with open("cli_anything/inkscape/README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="cli-anything-inkscape",
-    version="1.0.0",
+    version="1.0.1",
     author="cli-anything contributors",
     author_email="",
     description="CLI harness for Inkscape - SVG vector graphics with export via inkscape --export-filename. Requires: inkscape (apt install inkscape)",
@@ -36,6 +36,7 @@ setup(
     install_requires=[
         "click>=8.0.0",
         "prompt-toolkit>=3.0.0",
+        "defusedxml>=0.7.1",
     ],
     extras_require={
         "dev": [

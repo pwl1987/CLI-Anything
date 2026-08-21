@@ -26,6 +26,7 @@ Structure:
 import os
 import time
 from xml.etree import ElementTree as ET
+from defusedxml.ElementTree import parse as _defused_parse
 from typing import Optional
 
 
@@ -37,7 +38,7 @@ def parse_drawio(path: str) -> ET.Element:
     """Parse a .drawio XML file. Returns the root <mxfile> element."""
     if not os.path.exists(path):
         raise FileNotFoundError(f"File not found: {path}")
-    tree = ET.parse(path)
+    tree = _defused_parse(path)
     return tree.getroot()
 
 
@@ -301,7 +302,8 @@ def _new_id(prefix: str = "cell") -> str:
 def add_vertex(mxfile: ET.Element, shape_type: str,
                x: float, y: float, width: float, height: float,
                label: str = "", parent: str = "1",
-               diagram_index: int = 0) -> str:
+               diagram_index: int = 0,
+               cell_id: Optional[str] = None) -> str:
     """Add a shape (vertex) to the diagram.
 
     Args:
@@ -311,12 +313,16 @@ def add_vertex(mxfile: ET.Element, shape_type: str,
         width, height: Dimensions.
         label: Text label for the shape.
         parent: Parent cell ID (default "1" = default layer).
+        cell_id: Optional custom ID. Auto-generated if not provided.
 
     Returns:
         The new cell's ID.
     """
     root = get_root(mxfile, diagram_index)
-    cell_id = _new_id("v")
+    if cell_id is None:
+        cell_id = _new_id("v")
+    elif find_cell_by_id(mxfile, cell_id, diagram_index) is not None:
+        raise ValueError(f"Cell ID already exists: {cell_id}")
 
     cell = ET.SubElement(root, "mxCell")
     cell.set("id", cell_id)
@@ -343,7 +349,8 @@ def add_vertex(mxfile: ET.Element, shape_type: str,
 
 def add_edge(mxfile: ET.Element, source_id: str, target_id: str,
              edge_style: str = "orthogonal", label: str = "",
-             parent: str = "1", diagram_index: int = 0) -> str:
+             parent: str = "1", diagram_index: int = 0,
+             edge_id: Optional[str] = None) -> str:
     """Add an edge (connector) between two cells.
 
     Args:
@@ -353,12 +360,16 @@ def add_edge(mxfile: ET.Element, source_id: str, target_id: str,
         edge_style: Edge style preset name (see EDGE_STYLES) or raw style string.
         label: Optional edge label.
         parent: Parent cell ID.
+        edge_id: Optional custom ID. Auto-generated if not provided.
 
     Returns:
         The new edge's ID.
     """
     root = get_root(mxfile, diagram_index)
-    edge_id = _new_id("e")
+    if edge_id is None:
+        edge_id = _new_id("e")
+    elif find_cell_by_id(mxfile, edge_id, diagram_index) is not None:
+        raise ValueError(f"Cell ID already exists: {edge_id}")
 
     cell = ET.SubElement(root, "mxCell")
     cell.set("id", edge_id)
